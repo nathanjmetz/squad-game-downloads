@@ -215,7 +215,8 @@ function openPage(html) {
 	const page = $("page");
 	page.innerHTML = html;
 	page.hidden = false;
-	document.title = "PUBG 2: Battlegrounds";
+	const titled = page.querySelector("[data-title]");
+	if (titled) document.title = titled.dataset.title;
 	showPanel(location.hash.slice(1));
 	setupMusic();
 	loadRelease();
