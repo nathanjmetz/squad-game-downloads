@@ -125,7 +125,8 @@ function setupMusic() {
 		cancelAnimationFrame(fade);
 		const from = audio.volume, t0 = performance.now(), ms = 1200;
 		const step = (t) => {
-			const k = Math.min(1, (t - t0) / ms);
+			// rAF time can be a little before t0, so clamp both ends.
+			const k = Math.max(0, Math.min(1, (t - t0) / ms));
 			audio.volume = from + (to - from) * k;
 			if (k < 1) fade = requestAnimationFrame(step); else if (done) done();
 		};
