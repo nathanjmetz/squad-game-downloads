@@ -109,11 +109,18 @@ function showPanel(name) {
 }
 window.addEventListener("hashchange", () => showPanel(location.hash.slice(1)));
 
-// Theme song: off until asked for, faded in and out.
+// Theme song: on by default once the page is unlocked, faded in and out.
+// Turning it off is remembered on this device. Browsers only allow sound
+// after a click or key press, so after an automatic unlock (remembered
+// password) it starts on the visitor's first click or key instead.
+const MUSIC_STORE = "download-page-music";
+
 function setupMusic() {
 	const btn = $("music");
 	const audio = $("theme");
 	let fade = 0;
+	let wanted = true;
+	try { wanted = localStorage.getItem(MUSIC_STORE) !== "off"; } catch (e) { /* private mode */ }
 	const ramp = (to, done) => {
 		cancelAnimationFrame(fade);
 		const from = audio.volume, t0 = performance.now(), ms = 1200;
@@ -124,18 +131,38 @@ function setupMusic() {
 		};
 		fade = requestAnimationFrame(step);
 	};
-	btn.addEventListener("click", () => {
-		const on = btn.getAttribute("aria-pressed") !== "true";
+	const show = (on) => {
 		btn.setAttribute("aria-pressed", String(on));
 		btn.querySelector(".chip-text").textContent = on ? "MUSIC ON" : "MUSIC OFF";
 		btn.title = on ? "Stop the theme song" : "Play the theme song";
-		if (on) {
-			audio.volume = 0;
-			audio.play().then(() => ramp(0.6)).catch(() => {});
-		} else {
-			ramp(0, () => audio.pause());
-		}
+	};
+	const start = () => {
+		if (!wanted || !audio.paused) return Promise.resolve();
+		audio.volume = 0;
+		return audio.play().then(() => ramp(0.6));
+	};
+	// Blocked autoplay: try again on the first click or key press anywhere.
+	const retry = (ev) => {
+		if (ev.target.closest && ev.target.closest("#music")) return;
+		start().then(() => {
+			document.removeEventListener("pointerdown", retry, true);
+			document.removeEventListener("keydown", retry, true);
+		}).catch(() => {});
+	};
+	btn.addEventListener("click", () => {
+		wanted = btn.getAttribute("aria-pressed") !== "true";
+		try { localStorage.setItem(MUSIC_STORE, wanted ? "on" : "off"); } catch (e) { /* private mode */ }
+		show(wanted);
+		if (wanted) start().catch(() => {});
+		else ramp(0, () => audio.pause());
 	});
+	show(wanted);
+	if (wanted) {
+		start().catch(() => {
+			document.addEventListener("pointerdown", retry, true);
+			document.addEventListener("keydown", retry, true);
+		});
+	}
 }
 
 // Embers drifting up from the bottom (Brand.embers in the game).
