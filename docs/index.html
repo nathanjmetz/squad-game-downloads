@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Downloads</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0B0C0E">
+<link rel="preload" href="fonts/BarlowCondensed-Bold.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="backdrop" aria-hidden="true"></div>
+<canvas id="embers" aria-hidden="true"></canvas>
+
+<form class="lock" id="lock" autocomplete="on">
+	<h2>ENTER PASSWORD</h2>
+	<p class="hint">This page is for family only.</p>
+	<input type="text" name="username" value="family" autocomplete="username" hidden>
+	<input class="field" id="password" type="password" name="password" autocomplete="current-password" placeholder="Password" required autofocus>
+	<p class="status" id="lock-error" hidden>That's not it. Try again.</p>
+	<button class="primary" type="submit" id="unlock">ENTER</button>
+</form>
+<div id="page" hidden></div>
+
+<audio id="theme" src="theme.mp3" preload="none" loop></audio>
+<script src="app.js"></script>
+</body>
+</html>
