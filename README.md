@@ -3,7 +3,9 @@
 Builds of our co-op squad shooter for Mac and Windows. This repo holds only
 the downloads, no source code.
 
-**Download the newest build:** https://github.com/nathanjmetz/squad-game-downloads/releases/latest
+**Download page:** https://nathanjmetz.github.io/squad-game-downloads/
+
+**Newest build on GitHub:** https://github.com/nathanjmetz/squad-game-downloads/releases/latest
 
 - Windows: [SquadGame-Windows.zip](https://github.com/nathanjmetz/squad-game-downloads/releases/latest/download/SquadGame-Windows.zip)
 - Mac: [SquadGame-Mac.zip](https://github.com/nathanjmetz/squad-game-downloads/releases/latest/download/SquadGame-Mac.zip)
