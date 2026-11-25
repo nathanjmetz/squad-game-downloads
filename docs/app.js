@@ -23,7 +23,20 @@ function detectOs() {
 }
 
 function sizeText(bytes) {
-	return bytes ? `${Math.round(bytes / 1048576)} MB` : "";
+	if (!bytes) return "";
+	return bytes >= 1073741824 ? `${(bytes / 1073741824).toFixed(1)} GB` : `${Math.round(bytes / 1048576)} MB`;
+}
+
+const totalSize = (x) => (x.size || 0) + (x.packs || []).reduce((t, k) => t + (k.size || 0), 0);
+const fileCount = (x) => 1 + (x.packs || []).length;
+
+// One press starts every file for this computer, a second apart (the browser asks once to allow several downloads).
+function downloadAll(x) {
+	const urls = [x.url, ...(x.packs || []).map((k) => k.url)];
+	urls.forEach((u, i) => setTimeout(() => { const a = document.createElement("a"); a.href = u; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); }, i * 1200));
+	const s = $("status");
+	s.textContent = `Downloading ${urls.length} files (${sizeText(totalSize(x))}). If the browser asks, allow multiple downloads. Keep all of them together; see INSTALL.`;
+	s.hidden = false;
 }
 
 function whenText(iso) {
@@ -42,8 +55,10 @@ function render(assets, release) {
 	const mine = PLATFORMS.find((p) => p.id === os);
 	const primary = $("primary");
 	if (mine && assets[mine.id]) {
-		primary.href = assets[mine.id].url;
-		primary.innerHTML = `DOWNLOAD<small>FOR ${mine.label}${assets[mine.id].size ? "  ·  " + sizeText(assets[mine.id].size) : ""}</small>`;
+		const x = assets[mine.id];
+		primary.href = x.url;
+		primary.innerHTML = `DOWNLOAD<small>FOR ${mine.label}  ·  ${fileCount(x)} FILES  ·  ${sizeText(totalSize(x))}</small>`;
+		primary.onclick = (e) => { if (x.packs && x.packs.length) { e.preventDefault(); downloadAll(x); } };
 	} else {
 		primary.href = RELEASES;
 		primary.innerHTML = os === "mobile" ? "DOWNLOADS<small>THE GAME RUNS ON A COMPUTER</small>" : "DOWNLOADS";
@@ -58,9 +73,10 @@ function render(assets, release) {
 		a.className = "row";
 		const has = !!assets[p.id];
 		const known = release !== null;
-		a.href = has ? assets[p.id].url : RELEASES;
+		a.href = has && !(assets[p.id].packs || []).length ? assets[p.id].url : RELEASES;
+		if (has && (assets[p.id].packs || []).length) a.onclick = (e) => { e.preventDefault(); downloadAll(assets[p.id]); };
 		if (known && !has) a.classList.add("off");
-		a.innerHTML = `<span>${p.label}</span><small>${has ? sizeText(assets[p.id].size) + "  ›" : known ? "not built yet" : "on GitHub  ›"}</small>`;
+		a.innerHTML = `<span>${p.label}</span><small>${has ? sizeText(totalSize(assets[p.id])) + "  ›" : known ? "not built yet" : "on GitHub  ›"}</small>`;
 		others.appendChild(a);
 	}
 
@@ -92,7 +108,14 @@ async function loadRelease() {
 		for (const a of release.assets || []) {
 			if (!/\.(zip|dmg|exe|tar\.gz|tgz|AppImage)$/i.test(a.name)) continue;
 			const p = PLATFORMS.find((p) => p.match.test(a.name));
-			if (p && !assets[p.id]) assets[p.id] = { url: a.browser_download_url, size: a.size };
+			if (p && !assets[p.id]) assets[p.id] = { url: a.browser_download_url, size: a.size, packs: [] };
+		}
+		// Since Build 204 the game data ships as separate packs (GitHub's 2 GB file limit); the game
+		// reads them from next to the app, so a download is the zip plus every pack for that platform.
+		for (const a of release.assets || []) {
+			if (!/-data-\d+\.pck$/i.test(a.name)) continue;
+			const p = PLATFORMS.find((p) => p.match.test(a.name));
+			if (p && assets[p.id]) assets[p.id].packs.push({ url: a.browser_download_url, size: a.size, name: a.name });
 		}
 		render(assets, release);
 	} catch (e) {
